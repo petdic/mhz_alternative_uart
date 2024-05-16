@@ -31,7 +31,6 @@ void MHZ19Component::update() {
   }
 
   if (response[0] != 0x64 || response[1] != 0x69) {
-    // ESP_LOGW(TAG, "%d -> 0x%x",response[0], response[0]);
     ESP_LOGW(TAG, "Invalid preamble from MHZ19!");
     this->status_set_warning();
     return;
@@ -49,7 +48,6 @@ bool MHZ19Component::mhz19_write_command_(const uint8_t *command, uint8_t *respo
   // Empty RX Buffer
   this->write_array(command, REQUEST_LENGTH);
   this->flush();
-  // this->write_byte(mhz19_checksum(command));  
   if (response == nullptr)
     return true;
   return this->read_array(response, RESPONSE_LENGTH);
