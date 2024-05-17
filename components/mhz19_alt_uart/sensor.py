@@ -52,11 +52,11 @@ async def to_code(config):
     cg.add(var.set_warmup_seconds(config[CONF_WARMUP_TIME]))
 
 
-CALIBRATION_ACTION_SCHEMA = maybe_simple_id(
-    {
-        cv.Required(CONF_ID): cv.use_id(MHZ19Component),
-    }
-)
+# CALIBRATION_ACTION_SCHEMA = maybe_simple_id(
+#     {
+#         cv.Required(CONF_ID): cv.use_id(MHZ19Component),
+#     }
+# )
 
 async def mhz19_calibration_to_code(config, action_id, template_arg, args):
     paren = await cg.get_variable(config[CONF_ID])
