@@ -39,7 +39,14 @@ void MHZ19Component::update() {
     return;
   }
 
-  if (response[0] != 0x64 || response[1] != 0x69) {
+  for (size_t i = 0; i < RESPONSE_LENGTH; i++)
+    printf("0x%x ",response[i]);
+  printf("\n");
+
+  
+  // ESP_LOGW(TAG,"%s",response);
+  if (response[0] != 0x42 || response[1] != 0x4d) {
+    // ESP_LOGW(TAG, "%d -> 0x%x",response[0], response[0]);
     ESP_LOGW(TAG, "Invalid preamble from MHZ19!");
     this->status_set_warning();
     return;
@@ -72,11 +79,18 @@ bool MHZ19Component::mhz19_write_command_(const uint8_t *command, uint8_t *respo
   this->read_array(response, RESPONSE_LENGTH);
 
   // Empty RX Buffer
-  this->write_array(command, REQUEST_LENGTH);
-  this->flush();
-  if (response == nullptr)
-    return true;
-  return this->read_array(response, RESPONSE_LENGTH);
+  while(this->available()) {
+      this->read();
+  }
+
+  // Skip initial read request
+  if (initial) {
+    initial = false;
+    return false;
+  }
+
+  // Return true if not initial request
+  return true && !initial;
 }
 float MHZ19Component::get_setup_priority() const { return setup_priority::DATA; }
 void MHZ19Component::dump_config() {
