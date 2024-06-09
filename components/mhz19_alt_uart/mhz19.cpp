@@ -7,8 +7,17 @@ namespace mhz19 {
 static const char *const TAG = "mhz19";
 
 static const uint8_t REQUEST_LENGTH = 5;
-static const uint8_t RESPONSE_LENGTH = 14;
+static const uint8_t RESPONSE_LENGTH = 16;
 static const uint8_t GET_PPM[] = {0x64, 0x69, 0x03, 0x5E, 0x4E};
+bool initial = true;
+
+uint8_t mhz19_checksum(const uint8_t *command) {
+  uint8_t sum = 0;
+  for (uint8_t i = 0; i < RESPONSE_LENGTH-2; i++) {
+    sum += command[i];
+  }
+  return sum;
+}
 
 void MHZ19Component::setup() {
   return;
@@ -36,15 +45,32 @@ void MHZ19Component::update() {
     return;
   }
 
+  uint8_t checksum = mhz19_checksum(response);
+  if (response[15] != checksum) {
+    ESP_LOGW(TAG, "MHZ19 Checksum doesn't match: 0x%02X!=0x%02X", response[15], checksum);
+    this->status_set_warning();
+    return;
+  }
+
   this->status_clear_warning();
-  const uint16_t ppm = (uint16_t(response[5]*256) + response[4]);
+  const uint16_t ppm = (uint16_t(response[6]*256) + response[7]);
 
   ESP_LOGD(TAG, "MHZ19 Received CO₂=%uppm", ppm);
   if (this->co2_sensor_ != nullptr)
     this->co2_sensor_->publish_state(ppm);
 }
 
-bool MHZ19Component::mhz19_write_command_(const uint8_t *command, uint8_t *response) {
+bool MHZ19Component::mhz19_write_command_(const uint8_t *command, uint8_t *response) {  
+  if(!this->available()) {
+    printf("========= UNAVAILABLE =========\n");
+    return false;
+  } else {
+    printf("AVAILABLE: ");
+  }
+
+  // Read from RX Buffer
+  this->read_array(response, RESPONSE_LENGTH);
+
   // Empty RX Buffer
   this->write_array(command, REQUEST_LENGTH);
   this->flush();
